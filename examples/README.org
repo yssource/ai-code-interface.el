@@ -1,4 +1,6 @@
 
+* Game
+
 Two games were written with the assistance of aider / aider.el
 
 - [[./battleship][battleship]] - https://en.wikipedia.org/wiki/Battleship_(game)
@@ -15,4 +17,4 @@ Two games were written with the assistance of aider / aider.el
 
 - These games are CLI-based text games. In the future, I plan to create graphical versions using pygame, with the help of aider and aider.el
 
-- leetcode: resolve problem with single prompt, using TDD mode
+* leetcode: resolve problem with single prompt, using TDD mode
