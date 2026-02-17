@@ -21,6 +21,7 @@
 (declare-function ai-code-backends-infra--terminal-send-string "ai-code-backends-infra" (string))
 (declare-function ai-code-backends-infra--terminal-send-backspace "ai-code-backends-infra" ())
 (declare-function ai-code--prompt-filepath-candidates "ai-code-prompt-mode" ())
+(declare-function ai-code--git-root "ai-code-file" (&optional dir))
 
 ;;;###autoload
 (defun ai-code-plain-read-string (prompt &optional initial-input candidate-list)
@@ -162,7 +163,8 @@ The current buffer's file is always first."
     (catch 'found
       (dolist (pattern patterns)
         (when (string-match pattern line)
-          (throw 'found (match-string 1 line))))
+          (let ((name (match-string 1 line)))
+            (throw 'found (replace-regexp-in-string ":+\\'" "" name)))))
       nil)))
 
 (defun ai-code--imenu-symbol-from-position (payload)
@@ -245,7 +247,7 @@ The current buffer's file is always first."
 (defun ai-code--hash-completion-target-file (&optional end-pos)
   "Return an absolute file path for @relative path ending at END-POS.
 END-POS defaults to the current '#' position."
-  (when-let ((git-root (magit-toplevel)))
+  (when-let ((git-root (ai-code--git-root)))
     (let* ((end (or end-pos (1- (point))))
            (start (save-excursion
                     (goto-char end)
@@ -258,10 +260,9 @@ END-POS defaults to the current '#' position."
                                (< start end)
                                (buffer-substring-no-properties start end))))
       (when relative-path
-        (let ((file (expand-file-name relative-path git-root))
-              (git-root-truename (file-truename git-root)))
+        (let ((file (expand-file-name relative-path git-root)))
           (when (and (file-regular-p file)
-                     (string-prefix-p git-root-truename (file-truename file)))
+                     (string-prefix-p git-root (file-truename file)))
             file))))))
 
 (defun ai-code--file-symbol-candidates (file)
@@ -289,7 +290,7 @@ END-POS defaults to the current '#' position."
              (ai-code--comment-context-p)
              (buffer-file-name)
              (not (minibufferp))
-             (magit-toplevel))
+             (ai-code--git-root))
     (let ((end (point))
           (start (save-excursion
                    (skip-chars-backward "A-Za-z0-9_./-")
@@ -327,7 +328,7 @@ END-POS defaults to the current '#' position."
              (fboundp 'ai-code-backends-infra--session-buffer-p)
              (ai-code-backends-infra--session-buffer-p (current-buffer))
              (not (minibufferp))
-             (magit-toplevel))
+             (ai-code--git-root))
     (pcase (char-before)
       (?@
        (let ((candidates (ai-code--prompt-filepath-candidates)))
@@ -351,7 +352,7 @@ END-POS defaults to the current '#' position."
               (fboundp 'ai-code-backends-infra--session-buffer-p)
               (ai-code-backends-infra--session-buffer-p (current-buffer))
               (not (minibufferp))
-              (magit-toplevel))))
+              (ai-code--git-root))))
     (ai-code-backends-infra--terminal-send-string "@")
     (when should-complete
       (let ((candidates (ai-code--prompt-filepath-candidates)))
@@ -371,7 +372,7 @@ END-POS defaults to the current '#' position."
                (fboundp 'ai-code-backends-infra--session-buffer-p)
                (ai-code-backends-infra--session-buffer-p (current-buffer))
                (not (minibufferp))
-               (magit-toplevel)))
+               (ai-code--git-root)))
          (file (and should-complete
                     (ai-code--hash-completion-target-file (point)))))
     (ai-code-backends-infra--terminal-send-string "#")
