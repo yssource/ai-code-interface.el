@@ -2,6 +2,8 @@
 * Release history
 
 ** Main branch change
+- Fix: Always normalize git path
+- Chore: Replace prefix arg with completing-read menu in context action
 - Chore: Add option: ask-me, to ai-code-auto-test-type
 - Feat: Create file or dir name with gptel, with ai-code-create-file-or-dir function
 
