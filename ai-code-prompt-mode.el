@@ -551,7 +551,8 @@ Returns a filename with .org suffix."
   (insert "\n* Task Description\n\n")
   (insert task-name)
   (insert "\n\n* Investigation\n\n")
-  (insert "# Enter your prompts here. After that,\n# Select them and use C-c a SPC (ai-code-send-command) to send to AI\n\n")
+  (insert "# Enter your prompts here. After that,\n# Select them and use C-c a SPC (ai-code-send-command) to send to AI\n")
+  (insert "#   Or You use C-c C-c (ai-code-prompt-send-block) to send the whole prompt block to AI\n\n")
   (insert "# Use C-c a n (ai-code-take-notes) to copy notes back from AI session\n\n")
   (insert "\n\n* Code Change\n\n"))
 
