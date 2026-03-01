@@ -584,6 +584,26 @@ If no such buffer is found, report a user-error."
   "\nFollow the test-code pattern in the current project. Write the test-code in the test-file. If the test-file does not exist, create it using the same test-filename pattern used in this repository."
   "Instruction appended to TDD prompts to enforce the project's test pattern.")
 
+(defconst ai-code--tdd-run-test-after-this-stage-instruction
+  " Run test after this stage and output the summary of test result. List the public API / log key / config key change if there is."
+  "Instruction appended to single-stage TDD prompts.")
+
+(defconst ai-code--tdd-run-test-after-each-stage-instruction
+  " Run test after each stage and output the summary of test result. List the public API / log key / config key change if there is."
+  "Instruction appended to multi-stage TDD prompts.")
+
+(defconst ai-code--tdd-red-green-base-instruction
+  "Follow TDD principles - write the failing test first, then implement the minimal code to make it pass"
+  "Base instruction shared by Red+Green style TDD prompts.")
+
+(defconst ai-code--tdd-red-green-tail-instruction
+  ". Only update test and source code. Run the tests and follow up with the test result (fix code if there is error)."
+  "Trailing instruction shared by Red+Green style TDD prompts.")
+
+(defconst ai-code--tdd-with-refactoring-extension-instruction
+  ". After that, refactor only the code you just changed. In refactor staging, first review the code diff (including tests) and identify the highest-impact cleanup. Then apply focused refactoring that preserves behavior while improving readability, keeping classes/functions small and cohesive, reducing duplication, and simplifying naming and control flow."
+  "Refactoring extension shared by Red+Green+Blue style TDD prompts.")
+
 (defun ai-code--tdd-red-stage (function-name)
   "Handle the Red stage of TDD for FUNCTION-NAME: Write a failing test."
   (let ((test-pattern-instruction ai-code--tdd-test-pattern-instruction))
@@ -610,7 +630,8 @@ If no such buffer is found, report a user-error."
               (format "%s%s\nFollow TDD principles - write only the test now, not the implementation. The test should fail when run because the functionality doesn't exist yet. Only update test file code.%s"
                       feature-desc
                       file-info
-                      test-pattern-instruction)))
+                      (concat ai-code--tdd-run-test-after-this-stage-instruction
+                              test-pattern-instruction))))
         (ai-code--insert-prompt tdd-instructions)))))
 
 (defun ai-code--tdd-source-function-context-p (function-name)
@@ -651,9 +672,32 @@ If no such buffer is found, report a user-error."
                         "Implement test functions using test cases described in the comments."))
          (file-info (ai-code--get-context-files-string))
          (tdd-instructions
-          (format "%s%s\nFollow TDD principles - write the failing test first, then implement the minimal code to make it pass. Only update test and source code. Run the tests and follow up with the test result (fix code if there is error).%s"
+          (format "%s%s\n%s%s%s%s"
                   feature-desc
                   file-info
+                  ai-code--tdd-red-green-base-instruction
+                  ai-code--tdd-red-green-tail-instruction
+                  ai-code--tdd-run-test-after-each-stage-instruction
+                  ai-code--tdd-test-pattern-instruction)))
+    (ai-code--insert-prompt tdd-instructions)))
+
+(defun ai-code--tdd-red-green-blue-stage (function-name)
+  "Handle the Red + Green + Blue stage for FUNCTION-NAME in one prompt."
+  ;; (ai-code--ensure-test-buffer-visible)
+  (let* ((feature-desc (ai-code-read-string
+                        (if function-name
+                            (format "Describe the feature to test for '%s': " function-name)
+                          "Describe the feature to test: ")
+                        "Implement test functions using test cases described in the comments."))
+         (file-info (ai-code--get-context-files-string))
+         (tdd-instructions
+          (format "%s%s\n%s%s%s%s%s"
+                  feature-desc
+                  file-info
+                  ai-code--tdd-red-green-base-instruction
+                  ai-code--tdd-with-refactoring-extension-instruction
+                  ai-code--tdd-red-green-tail-instruction
+                  ai-code--tdd-run-test-after-each-stage-instruction
                   ai-code--tdd-test-pattern-instruction)))
     (ai-code--insert-prompt tdd-instructions)))
 
@@ -674,8 +718,10 @@ to fix code."
          (implementation-desc (ai-code-read-string "Implementation instruction: " initial-input))
          (file-info (ai-code--get-context-files-string))
          (tdd-instructions
-          (format "%s%s\nFollow TDD principles - implement the code needed to make the test pass."
-                  implementation-desc file-info)))
+          (format "%s%s\nFollow TDD principles - implement the code needed to make the test pass.%s"
+                  implementation-desc
+                  file-info
+                  ai-code--tdd-run-test-after-this-stage-instruction)))
     (ai-code--insert-prompt tdd-instructions)))
 
 (defun ai-code--run-test-ai-assisted ()
@@ -752,8 +798,9 @@ Works with both source code and test files that have been added to ai-code."
                        (list "0. Run unit-tests"
                              red-stage-label
                              "2. Green (Make test pass)"
-                             "3. Refactor (Improve code quality)"
-                             "4. Red + Green (One prompt)")
+                             "3. Blue (Refactor, improve code quality)"
+                             "4. Red + Green (One prompt)"
+                             "5. Red + Green + Blue (One prompt)")
                        nil t))
          (stage-num (string-to-number (substring cycle-stage 0 1))))
     (cond
@@ -769,7 +816,9 @@ Works with both source code and test files that have been added to ai-code."
      ;; Refactor stage - call the main refactoring function in TDD mode
      ((= stage-num 3) (ai-code-refactor-book-method t))
      ;; Red + Green combined in one prompt
-     ((= stage-num 4) (ai-code--tdd-red-green-stage function-name)))))
+     ((= stage-num 4) (ai-code--tdd-red-green-stage function-name))
+     ;; Red + Green + Blue combined in one prompt
+     ((= stage-num 5) (ai-code--tdd-red-green-blue-stage function-name)))))
 
 (provide 'ai-code-agile)
 ;;; ai-code-agile.el ends here

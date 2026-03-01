@@ -12,6 +12,8 @@
 (require 'cl-lib)
 (require 'ai-code)
 
+(defvar ai-code--tdd-run-test-after-each-stage-instruction)
+
 (ert-deftest ai-code-test-set-auto-test-type-tdd-updates-suffix ()
   "Test that setting auto test type to tdd updates the suffix text."
   (let ((ai-code-auto-test-suffix "old")
@@ -20,12 +22,40 @@
     (ai-code--apply-auto-test-type 'tdd)
     (should (string-match-p "Follow TDD principles" ai-code-auto-test-suffix))))
 
+(ert-deftest ai-code-test-set-auto-test-type-tdd-with-refactoring-updates-suffix ()
+  "Test that setting auto test type to tdd-with-refactoring updates suffix text."
+  (let ((ai-code-auto-test-suffix "old")
+        (ai-code-auto-test-type nil)
+        (ai-code--tdd-test-pattern-instruction ""))
+    (ai-code--apply-auto-test-type 'tdd-with-refactoring)
+    (should (string-match-p
+             (regexp-quote ai-code--tdd-with-refactoring-extension-instruction)
+             ai-code-auto-test-suffix))
+    (should (string-match-p "XP Simplicity Rules" ai-code-auto-test-suffix))))
+
+(ert-deftest ai-code-test-resolve-tdd-suffix-includes-stage-test-summary-requirement ()
+  "Test that TDD suffix asks to run test after each stage and summarize result."
+  (let ((ai-code--tdd-test-pattern-instruction ""))
+    (let ((suffix (ai-code--test-after-code-change--resolve-tdd-suffix)))
+      (should (string-match-p "Run test after each stage" suffix))
+      (should (string-match-p "summary of test result" suffix)))))
+
+(ert-deftest ai-code-test-resolve-tdd-suffix-reuses-shared-each-stage-instruction ()
+  "Test that TDD suffix can reuse shared each-stage instruction when available."
+  (let ((ai-code--tdd-test-pattern-instruction "")
+        (ai-code--tdd-run-test-after-each-stage-instruction
+         " SHARED_EACH_STAGE_TEST_INSTRUCTION"))
+    (should (string-match-p "SHARED_EACH_STAGE_TEST_INSTRUCTION"
+                            (ai-code--test-after-code-change--resolve-tdd-suffix)))))
+
 (ert-deftest ai-code-test-resolve-auto-test-type-for-send ()
   "Test that send-time type resolution is consistent across mode values."
   (let ((ai-code-auto-test-type 'test-after-change))
     (should (eq 'test-after-change (ai-code--resolve-auto-test-type-for-send))))
   (let ((ai-code-auto-test-type 'tdd))
     (should (eq 'tdd (ai-code--resolve-auto-test-type-for-send))))
+  (let ((ai-code-auto-test-type 'tdd-with-refactoring))
+    (should (eq 'tdd-with-refactoring (ai-code--resolve-auto-test-type-for-send))))
   (let ((ai-code-auto-test-type nil))
     (should (eq nil (ai-code--resolve-auto-test-type-for-send)))))
 
@@ -107,10 +137,39 @@
   (let ((ai-code--auto-test-type-ask-choices
          '(("Run tests after code change" . test-after-change)
            ("Test driven development: Write test first" . tdd)
+           ("Test driven development with refactoring" . tdd-with-refactoring)
            ("Do not run test" . no-test))))
     (cl-letf (((symbol-function 'completing-read)
                (lambda (&rest _args) "Do not run test")))
       (should (eq 'no-test (ai-code--read-auto-test-type-choice))))))
+
+(ert-deftest ai-code-test-read-auto-test-type-choice-allow-tdd-with-refactoring ()
+  "Test that ask choices support selecting tdd-with-refactoring."
+  (let ((ai-code--auto-test-type-ask-choices
+         '(("Run tests after code change" . test-after-change)
+           ("Test driven development: Write test first" . tdd)
+           ("Test driven development with refactoring" . tdd-with-refactoring)
+           ("Do not run test" . no-test))))
+    (cl-letf (((symbol-function 'completing-read)
+               (lambda (&rest _args) "Test driven development with refactoring")))
+      (should (eq 'tdd-with-refactoring (ai-code--read-auto-test-type-choice))))))
+
+(ert-deftest ai-code-test-auto-test-type-ask-choices-include-tdd-with-refactoring ()
+  "Test that default ask choices include tdd-with-refactoring option."
+  (should (assoc "Test driven development with refactoring"
+                 ai-code--auto-test-type-ask-choices)))
+
+(ert-deftest ai-code-test-resolve-auto-test-suffix-for-send-ask-me-tdd-with-refactoring ()
+  "Test that ask-me can resolve to refactoring TDD suffix."
+  (let ((ai-code-auto-test-type 'ask-me)
+        (ai-code--tdd-test-pattern-instruction ""))
+    (cl-letf (((symbol-function 'ai-code--read-auto-test-type-choice)
+               (lambda () 'tdd-with-refactoring)))
+      (let ((suffix (ai-code--resolve-auto-test-suffix-for-send)))
+        (should (string-match-p
+                 (regexp-quote ai-code--tdd-with-refactoring-extension-instruction)
+                 suffix))
+        (should (string-match-p "XP Simplicity Rules" suffix))))))
 
 (ert-deftest ai-code-test-resolve-auto-test-suffix-for-send-ask-me-no-test ()
   "Test that ask-me can resolve to explicit no-test suffix."

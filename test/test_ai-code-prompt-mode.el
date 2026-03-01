@@ -790,7 +790,7 @@ and ensures everything is cleaned up afterward."
                      ((symbol-function 'ai-code--visible-window-files)
                       (lambda () '()))
                      ((symbol-function 'ai-code--current-frame-dired-paths)
-                      (lambda (_root) '("@src/" "@test/")))
+                      (lambda (_root) '("@src/" "test/")))
                      ((symbol-function 'ai-code--recent-buffer-paths)
                       (lambda (_root) '()))
                      ((symbol-function 'ai-code--buffer-file-list)
@@ -806,7 +806,7 @@ and ensures everything is cleaned up afterward."
                (should (member "@file.el" candidates))
                ;; Dired directories should come before buffer files
                (let ((src-pos (cl-position "@src/" candidates :test #'string=))
-                     (test-pos (cl-position "@test/" candidates :test #'string=))
+                     (test-pos (cl-position "test/" candidates :test #'string=))
                      (file-pos (cl-position "@file.el" candidates :test #'string=)))
                  (should (< src-pos file-pos))
                  (should (< test-pos file-pos))))))

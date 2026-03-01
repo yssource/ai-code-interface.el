@@ -156,15 +156,23 @@ with a newline separator."
 
 (defun ai-code--test-after-code-change--resolve-tdd-suffix ()
   "Return the TDD-style suffix for test-after-code-change prompts."
-  (let ((pattern (when (and (boundp 'ai-code--tdd-test-pattern-instruction)
-                            (stringp ai-code--tdd-test-pattern-instruction))
-                   ai-code--tdd-test-pattern-instruction)))
-    (concat "Follow TDD principles - write the failing test first, then implement the minimal code to make it pass. Only update test and source code. Run the tests and follow up with the test result (fix code if there is error)."
-            (or pattern ""))))
+  (concat ai-code--tdd-red-green-base-instruction
+          ai-code--tdd-red-green-tail-instruction
+          ai-code--tdd-run-test-after-each-stage-instruction
+          ai-code--tdd-test-pattern-instruction))
+
+(defun ai-code--test-after-code-change--resolve-tdd-with-refactoring-suffix ()
+  "Return the TDD+refactoring suffix for test-after-code-change prompts."
+  (concat ai-code--tdd-red-green-base-instruction
+          ai-code--tdd-with-refactoring-extension-instruction
+          ai-code--tdd-red-green-tail-instruction
+          ai-code--tdd-run-test-after-each-stage-instruction
+          ai-code--tdd-test-pattern-instruction))
 
 (defconst ai-code--auto-test-type-ask-choices
   '(("Run tests after code change" . test-after-change)
     ("Test driven development: Write test first" . tdd)
+    ("Test driven development with refactoring" . tdd-with-refactoring)
     ("Do not run tests" . no-test))
   "Choices for resolving the auto test suffix when `ai-code-auto-test-type` is `ask-me`.")
 
@@ -195,7 +203,7 @@ Return one of: `code-change`, `non-code-change`, or `unknown`."
          (condition-case err
              (if (require 'gptel nil t)
                  (let* ((raw-answer (ai-code-call-gptel-sync
-                                     (concat "Classify whether this user prompt requests code changes in a repository.\n"
+                                     (concat "Classify whether this user prompt requests program code changes in a repository.\n"
                                              "Reply with exactly one token: CODE_CHANGE or NOT_CODE_CHANGE.\n"
                                              "Treat edit/refactor/implement/fix/add/remove/update/tests as CODE_CHANGE.\n"
                                              "Treat explain/summarize/discuss/review without editing as NOT_CODE_CHANGE.\n\n"
@@ -234,6 +242,12 @@ Return one of: `code-change`, `non-code-change`, or `unknown`."
                    'code-change)
            'tdd)
        'tdd))
+    ('tdd-with-refactoring
+     (if ai-code-use-gptel-classify-prompt
+         (when (eq (ai-code--gptel-classify-prompt-code-change prompt-text)
+                   'code-change)
+           'tdd-with-refactoring)
+       'tdd-with-refactoring))
     (_ nil)))
 
 (defun ai-code--auto-test-suffix-for-type (type)
@@ -241,6 +255,7 @@ Return one of: `code-change`, `non-code-change`, or `unknown`."
   (pcase type
     ('test-after-change ai-code-test-after-code-change-suffix)
     ('tdd (ai-code--test-after-code-change--resolve-tdd-suffix))
+    ('tdd-with-refactoring (ai-code--test-after-code-change--resolve-tdd-with-refactoring-suffix))
     ('no-test "Do not run any test.")
     (_ nil)))
 
@@ -277,6 +292,7 @@ Return one of: `code-change`, `non-code-change`, or `unknown`."
   "Select how prompts request tests after code changes."
   :type '(choice (const :tag "Use test after code change prompt" test-after-change)
                  (const :tag "Use TDD Red+Green prompt" tdd)
+                 (const :tag "Use TDD Red+Green+Blue prompt" tdd-with-refactoring)
                  (const :tag "Ask every time" ask-me)
                  (const :tag "Off" nil))
   :set #'ai-code--test-after-code-change--set
