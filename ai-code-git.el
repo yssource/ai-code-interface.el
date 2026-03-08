@@ -792,6 +792,9 @@ The worktree path is
 Without PREFIX, call `ai-code-git-worktree-branch'.
 With PREFIX (for example C-u), call `magit-worktree-status'."
   (interactive "P")
+  (unless (and (stringp ai-code-git-worktree-root)
+               (> (length ai-code-git-worktree-root) 0))
+    (user-error "Please configure `ai-code-git-worktree-root` first"))
   (if prefix
       (call-interactively #'magit-worktree-status)
     (call-interactively #'ai-code-git-worktree-branch)))
