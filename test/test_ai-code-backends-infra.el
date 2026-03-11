@@ -108,8 +108,8 @@
         (advice-remove handler #'ai-code-backends-infra--terminal-reflow-filter))
       (fmakunbound handler))))
 
-(ert-deftest test-ai-code-backends-infra-sync-reflow-filter-advice-eat-toggle ()
-  "Respect `ai-code-backends-infra-eat-preserve-position' for eat backend."
+(ert-deftest test-ai-code-backends-infra-sync-reflow-filter-advice-eat-disabled ()
+  "Never install reflow advice for eat backend."
   (let ((handler 'ai-code-backends-infra--test-resize-eat))
     (fset handler (lambda (&rest args) args))
     (unwind-protect
@@ -125,8 +125,8 @@
                 (ai-code-backends-infra-prevent-reflow-glitch t)
                 (ai-code-backends-infra-eat-preserve-position t))
             (ai-code-backends-infra--sync-reflow-filter-advice)
-            (should (advice-member-p #'ai-code-backends-infra--terminal-reflow-filter
-                                     handler))))
+            (should-not (advice-member-p #'ai-code-backends-infra--terminal-reflow-filter
+                                         handler))))
       (when (advice-member-p #'ai-code-backends-infra--terminal-reflow-filter handler)
         (advice-remove handler #'ai-code-backends-infra--terminal-reflow-filter))
       (fmakunbound handler))))

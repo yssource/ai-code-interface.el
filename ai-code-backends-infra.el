@@ -98,7 +98,10 @@ Can be either `vterm' or `eat'."
   :group 'ai-code-backends-infra)
 
 (defcustom ai-code-backends-infra-eat-preserve-position t
-  "Maintain terminal scroll position when switching windows in eat."
+  "Obsolete compatibility toggle for eat-specific reflow suppression.
+Eat sessions now always use the terminal's native resize and redisplay
+behavior because suppressing reflow can leave the screen stale when a
+window becomes visible again."
   :type 'boolean
   :group 'ai-code-backends-infra)
 
@@ -388,9 +391,7 @@ Activity tracking for notifications is handled separately by
   "Add or remove terminal reflow advice according to current settings."
   (let* ((resize-handler (ai-code-backends-infra--terminal-resize-handler))
          (enabled (and ai-code-backends-infra-prevent-reflow-glitch
-                       (or (eq ai-code-backends-infra-terminal-backend 'vterm)
-                           (and (eq ai-code-backends-infra-terminal-backend 'eat)
-                                ai-code-backends-infra-eat-preserve-position)))))
+                       (eq ai-code-backends-infra-terminal-backend 'vterm))))
     (dolist (handler (cl-copy-list ai-code-backends-infra--reflow-advised-handlers))
       (unless (and enabled (eq handler resize-handler))
         (when (advice-member-p #'ai-code-backends-infra--terminal-reflow-filter
