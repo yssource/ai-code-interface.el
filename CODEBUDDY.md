@@ -90,8 +90,8 @@ The codebase is organized into focused modules:
 The main entry point is `ai-code-menu` (bound to `C-c a`), which uses the `transient` package to create an interactive menu with four sections:
 
 1. **AI CLI Session**: Start, resume, switch, select backend, upgrade, open config, apply prompt on file
-2. **AI Code Actions**: Code change, implement TODO, ask question, explain, send command, add context, create task file
-3. **AI Agile Development**: Refactor, TDD cycle, pull/review diff, run file, build project, open prompt file, insert function
+2. **AI Code Actions With Context**: Code change, implement TODO, ask question, explain, send command, add context, create task file
+3. **AI Agile Development With Harness**: Refactor, TDD cycle, pull/review diff, run file, build project, open prompt file, insert function
 4. **Other Tools**: Init project, debug exception, fix Flycheck errors, copy file name, toggle dedicated, open recent file, debug MCP, take notes, toggle notifications
 
 All context-aware actions automatically include:

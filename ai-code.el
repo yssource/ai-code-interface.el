@@ -449,7 +449,7 @@ Shows the current backend label to the right."
     ("G" "Open backend repo agent file" ai-code-open-backend-agent-file)
     ("|" "Apply prompt on file" ai-code-apply-prompt-on-current-file)]
 
-   ["AI Code Actions"
+   ["AI Code Actions With Context"
     (ai-code--infix-toggle-suffix)
     ("c" "Code change (C-u: clipboard)" ai-code-code-change)
     ("i" "Implement TODO (C-u: clipboard)" ai-code-implement-todo)
@@ -460,7 +460,7 @@ Shows the current backend label to the right."
     ("C" "Create file or dir with AI" ai-code-create-file-or-dir)
     ("w" "New worktree branch (C-u: status)" ai-code-git-worktree-action)]
 
-   ["AI Agile Development"
+   ["AI Agile Development With Harness"
     (ai-code--infix-select-code-change-auto-test)
     ("r" "Refactor Code"               ai-code-refactor-book-method)
     ("t" "Test Driven Development"     ai-code-tdd-cycle)
@@ -498,7 +498,7 @@ Shows the current backend label to the right."
     ("g" "Open backend config (eg. add mcp)" ai-code-open-backend-config)
     ("G" "Open backend repo agent file" ai-code-open-backend-agent-file)
     ("|" "Apply prompt on file" ai-code-apply-prompt-on-current-file)]
-   ["AI Code Actions"
+   ["AI Code Actions With Context"
     (ai-code--infix-toggle-suffix)
     ("c" "Code change (C-u: clipboard)" ai-code-code-change)
     ("i" "Implement TODO (C-u: clipboard)" ai-code-implement-todo)
@@ -508,7 +508,7 @@ Shows the current backend label to the right."
     ("@" "Context (add/show/clear)" ai-code-context-action)
     ("C" "Create file or dir with AI" ai-code-create-file-or-dir)
     ("w" "New worktree branch (C-u: status)" ai-code-git-worktree-action)]]
-  [["AI Agile Development"
+  [["AI Agile Development With Harness"
     (ai-code--infix-select-code-change-auto-test)
     ("r" "Refactor Code"               ai-code-refactor-book-method)
     ("t" "Test Driven Development"     ai-code-tdd-cycle)
