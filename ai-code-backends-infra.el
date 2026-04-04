@@ -86,7 +86,7 @@ Can be either `vterm' or `eat'."
   :type 'boolean
   :group 'ai-code-backends-infra)
 
-(defcustom ai-code-backends-infra-vterm-render-delay 0.005
+(defcustom ai-code-backends-infra-vterm-render-delay 0.01
   "Rendering optimization delay for batched terminal updates."
   :type 'number
   :group 'ai-code-backends-infra)
@@ -166,6 +166,12 @@ if the AI session buffer is not currently visible."
   :group 'ai-code-backends-infra)
 
 ;;; Vterm Rendering Optimization
+
+(defconst ai-code-backends-infra--vterm-redraw-regexp
+  "\033\\[[0-9;?]*[A-GJKMH]"
+  "Regexp to detect ANSI terminal redraw or movement sequences.
+Standalone carriage returns are intentionally excluded so simple CR-based
+updates are handled separately via carriage return counting.")
 
 (defvar-local ai-code-backends-infra--vterm-render-queue nil)
 (defvar-local ai-code-backends-infra--vterm-render-timer nil)
@@ -263,12 +269,14 @@ scrolling and copying are not disrupted by timer-driven redraws."
       (funcall orig-fun process input)
     (with-current-buffer (process-buffer process)
       (let* ((complex-redraw-detected
-              (string-match-p "\033\\[[0-9]*A.*\033\\[K.*\033\\[[0-9]*A.*\033\\[K" input))
+              (string-match-p ai-code-backends-infra--vterm-redraw-regexp input))
              (clear-count (1- (length (split-string input "\033\\[K"))))
+             (cr-count (cl-count ?\15 input))
              (escape-count (cl-count ?\033 input))
              (input-length (length input))
              (escape-density (if (> input-length 0) (/ (float escape-count) input-length) 0)))
         (if (or complex-redraw-detected
+                (>= cr-count 2)
                 (and (> escape-density 0.3) (>= clear-count 2))
                 ai-code-backends-infra--vterm-render-queue
                 (bound-and-true-p vterm-copy-mode))
@@ -946,8 +954,8 @@ CLEANUP-FN is called with no arguments when the process exits.
 INSTANCE-NAME overrides instance selection when non-nil.
 PREFIX enables instance selection when BUFFER-NAME is nil.
 When FORCE-PROMPT is non-nil, always prompt for a new instance name.
-ENV-VARS is a list of additional environment variable strings (e.g., \"VAR=value\")
-passed to the terminal session on creation.
+ENV-VARS is a list of additional environment variable strings, for example
+\"VAR=value\", passed to the terminal session on creation.
 MULTILINE-INPUT-SEQUENCE configures `S-<return>' and `C-<return>' to send
 that sequence inside the session buffer.
 POST-START-FN is called with (BUFFER PROCESS INSTANCE-NAME) after a new
