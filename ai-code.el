@@ -16,10 +16,10 @@
 ;; URL: https://github.com/tninja/ai-code-interface.el
 ;;
 ;; Supported AI coding CLIs include:
-;;   - Claude Code
-;;   - Gemini CLI
 ;;   - OpenAI Codex
 ;;   - GitHub Copilot CLI
+;;   - Gemini CLI
+;;   - Claude Code
 ;;   - Opencode
 ;;   - Grok CLI
 ;;   - Cursor CLI
