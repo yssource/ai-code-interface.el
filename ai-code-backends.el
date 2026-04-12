@@ -208,7 +208,7 @@ so the CLI itself handles the installation details."
      :config  "~/.claude.json"
      :agent-file "CLAUDE.md"
      :upgrade "npm install -g @anthropic-ai/claude-code@latest"
-     :install-skills ai-code-claude-code-install-skills
+     :install-skills nil
      :cli     "claude")
     (gemini
      :label "Gemini CLI"
@@ -584,28 +584,45 @@ ARG is the prefix argument to pass to the upgrade function."
   "Fallback skills installation for backend LABEL.
 Prompt user for a skills repository URL and ask the AI CLI session
 to read the repo README and install the skills."
-  (let* ((url (read-string
-               (format "Skills repo URL for %s: " label)
+  (ai-code--manage-backend-skills-fallback label 'install))
+
+(defun ai-code--manage-backend-skills-fallback (label action)
+  "Fallback backend skills management for LABEL and ACTION.
+ACTION should be the symbol `install' or `uninstall'."
+  (let* ((action-name
+          (pcase action
+            ('install "install")
+            ('uninstall "uninstall")
+            (_ (user-error
+                "Invalid backend skills action: %S; expected `install' or `uninstall'"
+                action))))
+         (url (read-string
+               (format "Skills repo URL for %s %s: " label action-name)
                nil nil "https://github.com/obra/superpowers"))
          (default-prompt
-          (format
-           "Please read the README of %s and install/setup the skills described there for %s. Follow the installation instructions in the README."
-           url label))
+          (if (eq action 'uninstall)
+              (format
+               "Please read the README of %s and uninstall/remove the skills described there for %s. Follow the repository instructions to remove any installed skill files and cleanup related configuration."
+               url label)
+            (format
+             "Please read the README of %s and install/setup the skills described there for %s. Follow the installation instructions in the README."
+             url label)))
          (prompt (if (called-interactively-p 'interactive)
                      (ai-code-read-string
-                      (format "Edit install-skills prompt for %s: " label)
+                      (format "Edit %s-skills prompt for %s: " action-name label)
                       default-prompt)
                    default-prompt)))
     (ai-code-cli-send-command prompt)))
 
 ;;;###autoload
 (defun ai-code-install-backend-skills ()
-  "Install skills for the currently selected backend.
-If the backend defines an :install-skills property, use it:
+  "Install or uninstall skills for the currently selected backend.
+Prompt for whether to install or uninstall first.
+When installing, if the backend defines an :install-skills property, use it:
   - string: run as a shell command via `compile'.
   - symbol: call the function.
-Otherwise fall back to prompting the AI session to install from a
-skills repository URL."
+Otherwise, or when uninstalling, fall back to prompting the AI session
+to manage skills from a skills repository URL."
   (interactive)
   (let* ((spec (ai-code--backend-spec ai-code-selected-backend)))
     (if (not spec)
@@ -613,8 +630,17 @@ skills repository URL."
       (ai-code--ensure-backend-loaded spec)
       (let* ((plist (cdr spec))
              (install-skills (plist-get plist :install-skills))
-             (label (ai-code-current-backend-label)))
+             (label (ai-code-current-backend-label))
+             (action-choice (completing-read
+                             (format "Manage skills for %s: " label)
+                             '("install" "uninstall")
+                             nil t nil nil "install"))
+             (action (if (string= action-choice "uninstall")
+                         'uninstall
+                       'install)))
         (cond
+         ((eq action 'uninstall)
+          (ai-code--manage-backend-skills-fallback label 'uninstall))
          ((stringp install-skills)
           (compile install-skills)
           (message "Running skills installation for %s" label))
