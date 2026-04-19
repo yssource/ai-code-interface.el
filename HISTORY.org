@@ -2,6 +2,9 @@
 * Release history
 
 ** Main branch change
+
+** 1.72
+- Chore: Add action intent prompt to TODO implementation flow
 - Refactor: Extract terminal specific variable / logic to their corresponding .el file
 - Cleanup: Remove pytest / jest / ert based test runner
 - Feat: Add resolve merge conflict AI tool for pull requests
