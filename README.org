@@ -132,6 +132,7 @@ Enable installation of packages from MELPA by adding an entry to package-archive
 - One of vterm (default), eat, or [[https://github.com/dakra/ghostel][ghostel]] needs to be installed to support native AI coding CLI backends, depending on `ai-code-backends-infra-terminal-backend`.
 - [[https://github.com/dakra/ghostel][ghostel]] is also supported as an *experimental* native backend infra option.
   - Ghostel is an Emacs terminal emulator powered by libghostty-vt, the VT engine from Ghostty.
+  - [[https://github.com/dakra/ghostel][ghostel]] is under active development, please install the latest version.
   - To try it:
 
 #+begin_src emacs-lisp
